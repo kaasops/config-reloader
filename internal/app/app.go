@@ -137,8 +137,8 @@ func checks(cfg *config.Config) error {
 		return fmt.Errorf("%s", "Missing volume-dir or volume-dir-archive")
 	}
 
-	if len(cfg.Webhook.Urls) < 1 {
-		return fmt.Errorf("%s", "Missing webhook-url")
+	if len(cfg.Webhook.Urls) < 1 && !*cfg.InitMode {
+		return fmt.Errorf("%s", "Missing webhook-url if initMode disable")
 	}
 
 	if *cfg.InitMode && (len(cfg.VolumeDirsArchive) < 1) {

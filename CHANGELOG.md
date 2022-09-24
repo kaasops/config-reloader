@@ -1,5 +1,7 @@
 ### Added
 
+### Release v0.0.3
+- Fix: Fix checks for webhook in initMode
 
 ### Release v0.0.2
 
