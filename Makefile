@@ -49,5 +49,5 @@ tag:
 	docker tag $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) $(DOCKER_IMAGE_NAME):$(TAG) 
 
 .PHONY: push
-push:
+push: tag
 	docker push $(DOCKER_IMAGE_NAME):$(TAG)
