@@ -1,0 +1,7 @@
+out/
+_gopath/
+vendor/
+.vendor
+manifest-tool
+.vscode/launch.json
+test/
