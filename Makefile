@@ -16,8 +16,9 @@ SHELL := /bin/bash -euo pipefail
 
 # Use the native vendor/ dependency system
 export GO111MODULE := on
-export CGO_ENABLED := 0
 
+GOOS ?= $(shell go env GOOS)
+GOARCH ?= $(shell go env GOARCH)
 
 ORG := github.com/vzemtsov
 REPOPATH ?= $(ORG)/config-reloader
@@ -27,21 +28,26 @@ BINARY=config-reloader
 
 LDFLAGS := -extldflags '-static'
 
+.PHONY: build-local
+build: clean
+	GOARCH=$(GOARCH) GOOS=$(GOOS) CGO_ENABLED=0 \
+		go build -ldflags="$(LDFLAGS)" -o out/$(BINARY) cmd/app/main.go
+
 .PHONY: build
 build: clean
-	CGO_ENABLED=0 go build -ldflags="$(LDFLAGS)" -o out/$(BINARY) cmd/app/main.go
+	GOARCH=amd64 GOOS=linux CGO_ENABLED=0 \
+		go build -ldflags="$(LDFLAGS)" -o out/$(BINARY) cmd/app/main.go
 
 .PHONY: run
-run: build
+run: build-local
 	./out/$(BINARY)
-
 
 .PHONY: clean
 clean:
 	rm -rf ./out
 
 .PHONY: docker
-docker: clean build
+docker: build
 	docker build --build-arg BINARY=$(BINARY) -t $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) .
 
 .PHONY: tag
@@ -53,6 +59,6 @@ push: tag
 	docker push $(DOCKER_IMAGE_NAME):$(TAG)
 
 .PHONY: release
-push: 
+release: 
 	docker tag $(DOCKER_IMAGE_NAME):$(TAG) $(DOCKER_IMAGE_NAME):latest
 	docker push $(DOCKER_IMAGE_NAME):latest

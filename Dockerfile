@@ -1,6 +1,6 @@
 FROM busybox
 
-USER 65534
+USER 65533
 
 ARG BINARY=config-reloader
 COPY out/$BINARY /config-reloader
