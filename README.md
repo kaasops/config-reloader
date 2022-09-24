@@ -27,18 +27,24 @@ It is available as a Docker image at https://hub.docker.com/r/vlzemtsov/config-r
 
 ```
 Usage of ./out/config-reloader:
+  -dir-for-unarchive string
+        Directory where the archives will be unpacked (default "/tmp/unatchive")
+  -init-mode
+        Init mode for unarchive files. Works only if volume-dir-archive exist. Default - false
   -volume-dir value
         the config map volume directory to watch for updates; may be used multiple times
+  -volume-dir-archive value
+        the config map volume directory to watch for updates and unarchiving; may be used multiple times
   -web.listen-address string
-    	  address to listen on for web interface and telemetry. (default ":9533")
+        Address to listen on for web interface and telemetry. (default ":9533")
   -web.telemetry-path string
-    	  path under which to expose metrics. (default "/metrics")
+        Path under which to expose metrics. (default "/metrics")
   -webhook-method string
         the HTTP method url to use to send the webhook (default "POST")
+  -webhook-retries int
+        the amount of times to retry the webhook reload request (default 1)
   -webhook-status-code int
         the HTTP status code indicating successful triggering of reload (default 200)
-  -webhook-url string
+  -webhook-url value
         the url to send a request to when the specified config map volume directory has been updated
-  -webhook-retries integer
-        the amount of times to retry the webhook reload request
 ```
