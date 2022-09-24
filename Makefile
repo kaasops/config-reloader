@@ -51,3 +51,8 @@ tag:
 .PHONY: push
 push: tag
 	docker push $(DOCKER_IMAGE_NAME):$(TAG)
+
+.PHONY: release
+push: 
+	docker tag $(DOCKER_IMAGE_NAME):$(TAG) $(DOCKER_IMAGE_NAME):latest
+	docker push $(DOCKER_IMAGE_NAME):latest
