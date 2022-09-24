@@ -29,6 +29,7 @@ func Run(cfg *config.Config) error {
 	}
 	if len(cfg.VolumeDirsArchive) > 0 {
 		for _, vda := range cfg.VolumeDirsArchive {
+			fmt.Printf("VDA: %s\n", vda)
 			unarchiveDir(vda, cfg)
 		}
 		if *cfg.InitMode {
@@ -103,7 +104,7 @@ func volumeDirArchiveWatcher(cfg *config.Config) error {
 					continue
 				}
 
-				err := unarchiveFile(event.Name, cfg)
+				err := unarchiveDir(event.Name, cfg)
 				if err != nil {
 					log.Println("Error:", err)
 				}
@@ -214,13 +215,15 @@ func sendWebHook(cfg *config.Config) {
 }
 
 func unarchiveDir(path string, cfg *config.Config) error {
-	files, err := ioutil.ReadDir(path)
+	kuberPath := path + "/..data"
+	files, err := ioutil.ReadDir(kuberPath)
 	if err != nil {
 		return err
 	}
 
 	for _, file := range files {
 		fullFilePath := path + "/" + file.Name()
+		fmt.Printf("file: %s", fullFilePath)
 		err := unarchiveFile(fullFilePath, cfg)
 		if err != nil {
 			return err
@@ -230,6 +233,8 @@ func unarchiveDir(path string, cfg *config.Config) error {
 }
 
 func unarchiveFile(path string, cfg *config.Config) error {
+	outFileName := *cfg.DirForUnarchive + "/" + filepath.Base(path)[0:len(filepath.Base(path))-3]
+	log.Printf("Unarhive file from %s to %s", path, outFileName)
 
 	if path[len(path)-3:] != ".gz" {
 		return fmt.Errorf("File %s is not a .gz archive. Do nothing", path)
@@ -247,9 +252,6 @@ func unarchiveFile(path string, cfg *config.Config) error {
 	defer gzipReader.Close()
 
 	// Uncompress to a writer. We'll use a file writer
-	outFileName := *cfg.DirForUnarchive + "/" + filepath.Base(path)[0:len(filepath.Base(path))-3]
-	// fmt.Println(outFileName)
-
 	outfileWriter, err := os.Create(outFileName)
 	if err != nil {
 		return err
