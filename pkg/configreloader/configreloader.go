@@ -1,7 +1,8 @@
-package app
+package configreloader
 
 import (
 	"compress/gzip"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,37 +14,55 @@ import (
 	"time"
 
 	fsnotify "github.com/fsnotify/fsnotify"
-	"github.com/vzemtsov/config-reloader/config"
-	"github.com/vzemtsov/config-reloader/pkg/metrics"
+	"github.com/zvlb/config-reloader/pkg/metrics"
 )
 
-func Run(cfg *config.Config) error {
+func New() (*ConfigReloader, error) {
+	cfg := &ConfigReloader{}
+	cfg.InitMode = flag.Bool("init-mode", false, "Init mode for unarchive files. Works only if volume-dir-archive exist. Default - false")
+	cfg.DirForUnarchive = flag.String("dir-for-unarchive", "/tmp/test-unarchive", "Directory where the archives will be unpacked")
+	cfg.Webhook.Method = flag.String("webhook-method", "POST", "the HTTP method url to use to send the webhook")
+	cfg.Webhook.StatusCode = flag.Int("webhook-status-code", 200, "the HTTP status code indicating successful triggering of reload")
+	cfg.Webhook.Retries = flag.Int("webhook-retries", 1, "the amount of times to retry the webhook reload request")
 
-	err := checks(cfg)
+	flag.Var(&cfg.VolumeDirs, "volume-dir", "the config map volume directory to watch for updates; may be used multiple times")
+	flag.Var(&cfg.VolumeDirsArchive, "volume-dir-archive", "the config map volume directory to watch for updates and unarchiving; may be used multiple times")
+	flag.Var(&cfg.Webhook.Urls, "webhook-url", "the url to send a request to when the specified config map volume directory has been updated")
+	flag.Parse()
+
+	return cfg, nil
+}
+
+func (cfg *ConfigReloader) Run() error {
+
+	err := cfg.checks()
 	if err != nil {
 		return err
 	}
 
 	if len(cfg.VolumeDirs) > 0 {
-		volumeDirWatcher(cfg)
+		err := cfg.volumeDirWatcher()
+		if err != nil {
+			return err
+		}
 	}
 	if len(cfg.VolumeDirsArchive) > 0 {
 		for _, vda := range cfg.VolumeDirsArchive {
-			fmt.Printf("VDA: %s\n", vda)
-			unarchiveDir(vda, cfg)
+			// fmt.Printf("VDA: %s\n", vda)
+			cfg.unarchiveDir(vda)
 		}
 		if *cfg.InitMode {
 			log.Println("Init mode completed")
 			return nil
 		}
-		volumeDirArchiveWatcher(cfg)
+		cfg.volumeDirArchiveWatcher()
 	}
 
 	return nil
 
 }
 
-func volumeDirWatcher(cfg *config.Config) error {
+func (cfg *ConfigReloader) volumeDirWatcher() error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -63,7 +82,7 @@ func volumeDirWatcher(cfg *config.Config) error {
 				}
 
 				log.Println("ConfigMap or Secret updated")
-				sendWebHook(cfg)
+				cfg.sendWebHook()
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					continue
@@ -81,11 +100,10 @@ func volumeDirWatcher(cfg *config.Config) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
-func volumeDirArchiveWatcher(cfg *config.Config) error {
+func (cfg *ConfigReloader) volumeDirArchiveWatcher() error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -104,13 +122,13 @@ func volumeDirArchiveWatcher(cfg *config.Config) error {
 					continue
 				}
 
-				err := unarchiveDir(event.Name, cfg)
+				err := cfg.unarchiveDir(event.Name)
 				if err != nil {
 					log.Println("Error:", err)
 				}
 
 				log.Println("ConfigMap or Secret updated")
-				sendWebHook(cfg)
+				cfg.sendWebHook()
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					continue
@@ -133,7 +151,7 @@ func volumeDirArchiveWatcher(cfg *config.Config) error {
 	return nil
 }
 
-func checks(cfg *config.Config) error {
+func (cfg *ConfigReloader) checks() error {
 	if (len(cfg.VolumeDirs) < 1) && (len(cfg.VolumeDirsArchive) < 1) {
 		return fmt.Errorf("%s", "Missing volume-dir or volume-dir-archive")
 	}
@@ -164,7 +182,7 @@ func isValidEvent(event fsnotify.Event) bool {
 	return true
 }
 
-func sendWebHook(cfg *config.Config) {
+func (cfg *ConfigReloader) sendWebHook() {
 	for _, h := range cfg.Webhook.Urls {
 		begun := time.Now()
 		req, err := http.NewRequest(*cfg.Webhook.Method, h.String(), nil)
@@ -214,17 +232,21 @@ func sendWebHook(cfg *config.Config) {
 
 }
 
-func unarchiveDir(path string, cfg *config.Config) error {
-	kuberPath := path + "/..data"
-	files, err := ioutil.ReadDir(kuberPath)
+func (cfg *ConfigReloader) unarchiveDir(path string) error {
+	// fmt.Println(path)
+	// kuberPath := path + "/..data"
+	// fmt.Println(kuberPath)
+	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		return err
 	}
 
 	for _, file := range files {
+		if file.Name()[len(file.Name())-3:] != ".gz" {
+			continue
+		}
 		fullFilePath := path + "/" + file.Name()
-		fmt.Printf("file: %s", fullFilePath)
-		err := unarchiveFile(fullFilePath, cfg)
+		err := cfg.unarchiveFile(fullFilePath)
 		if err != nil {
 			return err
 		}
@@ -232,13 +254,13 @@ func unarchiveDir(path string, cfg *config.Config) error {
 	return nil
 }
 
-func unarchiveFile(path string, cfg *config.Config) error {
+func (cfg *ConfigReloader) unarchiveFile(path string) error {
 	outFileName := *cfg.DirForUnarchive + "/" + filepath.Base(path)[0:len(filepath.Base(path))-3]
 	log.Printf("Unarhive file from %s to %s", path, outFileName)
 
-	if path[len(path)-3:] != ".gz" {
-		return fmt.Errorf("File %s is not a .gz archive. Do nothing", path)
-	}
+	// if path[len(path)-3:] != ".gz" {
+	// 	return fmt.Errorf("File %s is not a .gz archive. Do nothing", path)
+	// }
 
 	gzipFile, err := os.Open(path)
 	if err != nil {
