@@ -20,7 +20,7 @@ import (
 func New() (*ConfigReloader, error) {
 	cfg := &ConfigReloader{}
 	cfg.InitMode = flag.Bool("init-mode", false, "Init mode for unarchive files. Works only if volume-dir-archive exist. Default - false")
-	cfg.DirForUnarchive = flag.String("dir-for-unarchive", "/tmp/test-unarchive", "Directory where the archives will be unpacked")
+	cfg.DirForUnarchive = flag.String("dir-for-unarchive", "/tmp/unarchive", "Directory where the archives will be unpacked")
 	cfg.Webhook.Method = flag.String("webhook-method", "POST", "the HTTP method url to use to send the webhook")
 	cfg.Webhook.StatusCode = flag.Int("webhook-status-code", 200, "the HTTP status code indicating successful triggering of reload")
 	cfg.Webhook.Retries = flag.Int("webhook-retries", 1, "the amount of times to retry the webhook reload request")

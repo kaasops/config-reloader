@@ -21,14 +21,14 @@ If changes exist - send webhook.
 - Prometheus metrics
 
 
-It is available as a Docker image at https://hub.docker.com/r/vlzemtsov/config-reloader
+It is available as a Docker image at https://hub.docker.com/r/zvlb/config-reloader
 
 ### Usage
 
 ```
 Usage of ./out/config-reloader:
   -dir-for-unarchive string
-        Directory where the archives will be unpacked (default "/tmp/unatchive")
+        Directory where the archives will be unpacked (default "/tmp/unarchive")
   -init-mode
         Init mode for unarchive files. Works only if volume-dir-archive exist. Default - false
   -volume-dir value
