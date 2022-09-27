@@ -1,5 +1,10 @@
 ### Added
 
+### Release v0.1.0
+- Cleanup: restruct code
+- Cleanup: migrate from vzemtsov to zvlb repo
+- Fix: fix error with Unarchive
+
 ### Release v0.0.4
 - Fix: fix error in init mode
 - Logging: Add unarchive logs

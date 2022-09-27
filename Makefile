@@ -20,23 +20,23 @@ export GO111MODULE := on
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 
-ORG := github.com/vzemtsov
+ORG := github.com/zvlb
 REPOPATH ?= $(ORG)/config-reloader
-DOCKER_IMAGE_NAME ?= vlzemtsov/config-reloader
+DOCKER_IMAGE_NAME ?= zvlb/config-reloader
 DOCKER_IMAGE_TAG ?= develop
 BINARY=config-reloader
 
 LDFLAGS := -extldflags '-static'
 
 .PHONY: build-local
-build: clean
+build-local: clean
 	GOARCH=$(GOARCH) GOOS=$(GOOS) CGO_ENABLED=0 \
-		go build -ldflags="$(LDFLAGS)" -o out/$(BINARY) cmd/app/main.go
+		go build -ldflags="$(LDFLAGS)" -o out/$(BINARY) cmd/configreloader/main.go
 
 .PHONY: build
 build: clean
 	GOARCH=amd64 GOOS=linux CGO_ENABLED=0 \
-		go build -ldflags="$(LDFLAGS)" -o out/$(BINARY) cmd/app/main.go
+		go build -ldflags="$(LDFLAGS)" -o out/$(BINARY) cmd/configreloader/main.go
 
 .PHONY: run
 run: build-local
