@@ -1,4 +1,6 @@
 ### Added
+- Cleanup: Fix error in ReadMe
+- Cleanup: Switch default unarchove dir to "/tmp/unarchive"
 
 ### Release v0.1.0
 - Cleanup: restruct code
