@@ -14,7 +14,7 @@ import (
 	"time"
 
 	fsnotify "github.com/fsnotify/fsnotify"
-	"github.com/zvlb/config-reloader/pkg/metrics"
+	"github.com/banzaicloud/config-reloader/pkg/metrics"
 )
 
 func New() (*ConfigReloader, error) {
