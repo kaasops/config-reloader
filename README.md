@@ -4,6 +4,8 @@
   </a>
 </p>
 
+This repository is a fork of @zvlb's repository you can find the origin here -> https://github.com/zvlb/config-reloader/ 
+
 # Kubernetes Config (ConfigMap and Secret) Reloader
 
 This progect - based on https://github.com/jimmidyson/configmap-reload and https://github.com/prometheus-operator/prometheus-operator/pkgs/container/prometheus-config-reloader
@@ -21,7 +23,7 @@ If changes exist - send webhook.
 - Prometheus metrics
 
 
-It is available as a Docker image at https://hub.docker.com/r/zvlb/config-reloader
+It is available as a Docker image at ghcr.io/banzaicloud/config-reloader:latest
 
 ### Usage
 
