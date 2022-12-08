@@ -22,4 +22,5 @@ RUN CGO_ENABLED=0 go build -a -o config-reloader main.go
 FROM gcr.io/distroless/static:latest
 WORKDIR /
 COPY --from=builder /workspace/config-reloader .
+USER 65532:65532
 ENTRYPOINT ["/config-reloader"]
