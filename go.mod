@@ -1,4 +1,4 @@
-module github.com/zvlb/config-reloader
+module github.com/kaasops/config-reloader
 
 go 1.19
 

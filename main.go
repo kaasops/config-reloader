@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/zvlb/config-reloader/pkg/configreloader"
-	"github.com/zvlb/config-reloader/pkg/metrics"
+	"github.com/kaasops/config-reloader/pkg/configreloader"
+	"github.com/kaasops/config-reloader/pkg/metrics"
 )
 
 func main() {
