@@ -20,9 +20,8 @@ export GO111MODULE := on
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 
-ORG := github.com/zvlb
-REPOPATH ?= $(ORG)/config-reloader
-DOCKER_IMAGE_NAME ?= zvlb/config-reloader
+DOCKER_REPO ?= docker.io/kaasops
+DOCKER_IMAGE_NAME ?= config-reloader
 DOCKER_IMAGE_TAG ?= develop
 BINARY=config-reloader
 
@@ -47,18 +46,9 @@ clean:
 	rm -rf ./out
 
 .PHONY: docker
-docker: build
-	docker build --build-arg BINARY=$(BINARY) -t $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) .
-
-.PHONY: tag
-tag:
-	docker tag $(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) $(DOCKER_IMAGE_NAME):$(TAG) 
+docker:
+	docker build -t $(DOCKER_REPO)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) .
 
 .PHONY: push
-push: tag
-	docker push $(DOCKER_IMAGE_NAME):$(TAG)
-
-.PHONY: release
-release: 
-	docker tag $(DOCKER_IMAGE_NAME):$(TAG) $(DOCKER_IMAGE_NAME):latest
-	docker push $(DOCKER_IMAGE_NAME):latest
+push:
+	docker push $(DOCKER_REPO)/$(DOCKER_IMAGE_NAME):$(TAG)
