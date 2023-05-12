@@ -49,7 +49,9 @@ func (cfg *ConfigReloader) Run() error {
 	if len(cfg.VolumeDirsArchive) > 0 {
 		for _, vda := range cfg.VolumeDirsArchive {
 			// fmt.Printf("VDA: %s\n", vda)
-			cfg.unarchiveDir(vda)
+			if err = cfg.unarchiveDir(vda); err != nil {
+				return err
+			}
 		}
 		if *cfg.InitMode {
 			log.Println("Init mode completed")
@@ -76,13 +78,15 @@ func (cfg *ConfigReloader) volumeDirWatcher() error {
 				if !ok {
 					continue
 				}
+				log.Println("ConfigMap or Secret updated")
 
 				if !isValidEvent(event) {
+					log.Printf("Not a valid event: %s", event)
 					continue
 				}
-
-				log.Println("ConfigMap or Secret updated")
-				cfg.sendWebHook()
+				if len(cfg.Webhook.Urls) > 0 {
+					cfg.sendWebHook()
+				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					continue
@@ -117,8 +121,10 @@ func (cfg *ConfigReloader) volumeDirArchiveWatcher() error {
 				if !ok {
 					continue
 				}
+				log.Println("ConfigMap or Secret updated")
 
 				if !isValidEvent(event) {
+					log.Printf("Not a valid event: %s", event)
 					continue
 				}
 
@@ -127,8 +133,9 @@ func (cfg *ConfigReloader) volumeDirArchiveWatcher() error {
 					log.Println("Error:", err)
 				}
 
-				log.Println("ConfigMap or Secret updated")
-				cfg.sendWebHook()
+				if len(cfg.Webhook.Urls) > 0 {
+					cfg.sendWebHook()
+				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					continue
@@ -154,10 +161,6 @@ func (cfg *ConfigReloader) volumeDirArchiveWatcher() error {
 func (cfg *ConfigReloader) checks() error {
 	if (len(cfg.VolumeDirs) < 1) && (len(cfg.VolumeDirsArchive) < 1) {
 		return fmt.Errorf("%s", "Missing volume-dir or volume-dir-archive")
-	}
-
-	if len(cfg.Webhook.Urls) < 1 && !*cfg.InitMode {
-		return fmt.Errorf("%s", "Missing webhook-url if initMode disable")
 	}
 
 	if *cfg.InitMode && (len(cfg.VolumeDirsArchive) < 1) {
@@ -255,7 +258,7 @@ func (cfg *ConfigReloader) unarchiveDir(path string) error {
 }
 
 func (cfg *ConfigReloader) unarchiveFile(path string) error {
-	outFileName := *cfg.DirForUnarchive + "/" + filepath.Base(path)[0:len(filepath.Base(path))-3]
+	outFileName := *cfg.DirForUnarchive + "/" + filepath.Base(path)[0:len(filepath.Base(path))-len(filepath.Ext(filepath.Base(path)))]
 	log.Printf("Unarhive file from %s to %s", path, outFileName)
 
 	// if path[len(path)-3:] != ".gz" {
