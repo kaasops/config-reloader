@@ -1,4 +1,7 @@
 ### Added
+
+### Release v0.1.1
+- Fix: return error for init
 - Cleanup: Fix error in ReadMe
 - Cleanup: Switch default unarchove dir to "/tmp/unarchive"
 
