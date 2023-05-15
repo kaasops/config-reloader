@@ -20,7 +20,7 @@ import (
 const (
 	gziptype    = "application/gzip"
 	xgziptype   = "application/x-gzip"
-	gzExtention = "gz"
+	gzExtention = ".gz"
 )
 
 func New() (*ConfigReloader, error) {
@@ -250,7 +250,21 @@ func (cfg *ConfigReloader) unarchiveDir(path string) error {
 
 	for _, file := range files {
 		fullFilePath := path + "/" + file.Name()
-		err := cfg.unarchiveFile(fullFilePath)
+		isGzipArchive, err := isGzipArchive(fullFilePath)
+
+		if err != nil {
+			return err
+		}
+
+		if !isGzipArchive {
+			log.Printf("File %s is not a gzip archive", fullFilePath)
+			if err = copy(fullFilePath, *cfg.DirForUnarchive+"/"+filepath.Base(fullFilePath)); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		err = cfg.unarchiveFile(fullFilePath)
 		if err != nil {
 			return err
 		}
@@ -259,18 +273,6 @@ func (cfg *ConfigReloader) unarchiveDir(path string) error {
 }
 
 func (cfg *ConfigReloader) unarchiveFile(path string) error {
-
-	isGzipArchive, err := isGzipArchive(path)
-
-	if err != nil {
-		return err
-	}
-
-	if !isGzipArchive {
-		log.Printf("File %s is not a gzip archive", path)
-		return nil
-	}
-
 	outFileName := *cfg.DirForUnarchive + "/" + strings.TrimSuffix(filepath.Base(path), gzExtention)
 
 	f, err := os.Open(path)
@@ -327,4 +329,24 @@ func isGzipArchive(path string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+func copy(fromFile string, toFile string) error {
+	from, err := os.Open(fromFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer from.Close()
+
+	to, err := os.Create(toFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer to.Close()
+
+	_, err = io.Copy(to, from)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return nil
 }
