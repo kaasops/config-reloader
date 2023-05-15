@@ -1,5 +1,8 @@
 ### Added
 
+### Release v0.1.2
+- Find archives by mime type
+
 ### Release v0.1.1
 - Fix: return error for init
 - Cleanup: Fix error in ReadMe
