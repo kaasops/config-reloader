@@ -5,16 +5,22 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	fsnotify "github.com/fsnotify/fsnotify"
 	"github.com/kaasops/config-reloader/pkg/metrics"
+)
+
+const (
+	gziptype    = "application/gzip"
+	xgziptype   = "application/x-gzip"
+	gzExtention = ".gz"
 )
 
 func New() (*ConfigReloader, error) {
@@ -236,20 +242,29 @@ func (cfg *ConfigReloader) sendWebHook() {
 }
 
 func (cfg *ConfigReloader) unarchiveDir(path string) error {
-	// fmt.Println(path)
-	// kuberPath := path + "/..data"
-	// fmt.Println(kuberPath)
-	files, err := ioutil.ReadDir(path)
+
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return err
 	}
 
 	for _, file := range files {
-		if file.Name()[len(file.Name())-3:] != ".gz" {
-			continue
-		}
 		fullFilePath := path + "/" + file.Name()
-		err := cfg.unarchiveFile(fullFilePath)
+		isGzipArchive, err := isGzipArchive(fullFilePath)
+
+		if err != nil {
+			return err
+		}
+
+		if !isGzipArchive {
+			log.Printf("File %s is not a gzip archive", fullFilePath)
+			if err = copy(fullFilePath, *cfg.DirForUnarchive+"/"+filepath.Base(fullFilePath)); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		err = cfg.unarchiveFile(fullFilePath)
 		if err != nil {
 			return err
 		}
@@ -258,19 +273,18 @@ func (cfg *ConfigReloader) unarchiveDir(path string) error {
 }
 
 func (cfg *ConfigReloader) unarchiveFile(path string) error {
-	outFileName := *cfg.DirForUnarchive + "/" + filepath.Base(path)[0:len(filepath.Base(path))-len(filepath.Ext(filepath.Base(path)))]
-	log.Printf("Unarhive file from %s to %s", path, outFileName)
+	outFileName := *cfg.DirForUnarchive + "/" + strings.TrimSuffix(filepath.Base(path), gzExtention)
 
-	// if path[len(path)-3:] != ".gz" {
-	// 	return fmt.Errorf("File %s is not a .gz archive. Do nothing", path)
-	// }
+	f, err := os.Open(path)
 
-	gzipFile, err := os.Open(path)
 	if err != nil {
 		return err
 	}
 
-	gzipReader, err := gzip.NewReader(gzipFile)
+	defer f.Close()
+
+	log.Printf("Unarhive file from %s to %s", path, outFileName)
+	gzipReader, err := gzip.NewReader(f)
 	if err != nil {
 		return err
 	}
@@ -287,6 +301,52 @@ func (cfg *ConfigReloader) unarchiveFile(path string) error {
 	_, err = io.Copy(outfileWriter, gzipReader)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func isGzipArchive(path string) (bool, error) {
+	f, err := os.Open(path)
+
+	if err != nil {
+		return false, err
+	}
+
+	defer f.Close()
+
+	// Read first 512 bytes to determine the Content-Type of the given data
+	buff := make([]byte, 512)
+
+	_, err = f.Read(buff)
+
+	if err != nil {
+		return false, err
+	}
+
+	filetype := http.DetectContentType(buff)
+	if filetype == gziptype || filetype == xgziptype {
+		return true, nil
+	}
+	return false, nil
+}
+
+func copy(fromFile string, toFile string) error {
+	from, err := os.Open(fromFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer from.Close()
+
+	to, err := os.Create(toFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer to.Close()
+
+	_, err = io.Copy(to, from)
+	if err != nil {
+		log.Fatal(err)
 	}
 	return nil
 }
