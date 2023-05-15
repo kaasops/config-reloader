@@ -249,7 +249,8 @@ func (cfg *ConfigReloader) unarchiveDir(path string) error {
 	}
 
 	for _, file := range files {
-		if file.IsDir() {
+		if file.IsDir() || file.Name() == "..data" {
+			log.Printf("Skipping %s", file.Name())
 			continue
 		}
 		fullFilePath := path + "/" + file.Name()

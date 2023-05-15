@@ -12,4 +12,4 @@ docker:
 
 .PHONY: push
 push:
-	docker push $(DOCKER_REPO)/$(DOCKER_IMAGE_NAME):$(TAG)
+	docker push $(DOCKER_REPO)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)

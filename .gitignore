@@ -5,3 +5,5 @@ vendor/
 manifest-tool
 .vscode/launch.json
 test/
+in/
+out/
