@@ -249,6 +249,9 @@ func (cfg *ConfigReloader) unarchiveDir(path string) error {
 	}
 
 	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
 		fullFilePath := path + "/" + file.Name()
 		isGzipArchive, err := isGzipArchive(fullFilePath)
 
