@@ -1,5 +1,11 @@
 ### Added
 
+### Release v0.1.4
+- Skip ..data dir
+
+### Release v0.1.3
+- Skip dirs
+
 ### Release v0.1.2
 - Find archives by mime type
 
